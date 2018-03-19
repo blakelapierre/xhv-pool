@@ -4,11 +4,11 @@ RUN apt-get update && apt-get install -y git build-essential redis-server libboo
 
 RUN git clone https://github.com/blakelapierre/etn-pool
 
-RUN cd etn-pool/etn-pool && npm update
+RUN cd etn-pool/pool && npm update
 
 EXPOSE 8117
 EXPOSE 3333
 
-ADD config.json /etn-pool/etn-pool/config.json
+ADD config.json /etn-pool/pool/config.json
 
-CMD cd etn-pool/etn-pool && node init.js
+CMD cd etn-pool/pool && node init.js
