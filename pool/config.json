@@ -136,7 +136,7 @@
                 "enabled": true,
                 "updateInterval": 60,
                 "stepInterval": 60,
-                "maximumPeriod": 7 * 24 * 60 * 60
+                "maximumPeriod": 604800
             },
             "price": {
                 "enabled": true,
