@@ -4,4 +4,4 @@ docker run -d --rm --name redis -v /home/core/redis-data:/data redis:alpine
 docker run -td --rm --name daemon -v /home/core/daemon-data:/daemon-data blakelapierre/etnpool-daemon
 docker run -d --rm --name wallet --link daemon -v $(pwd)/wallet-data:/wallet-data blakelapierre/etnpool-wallet
 docker run -d --rm --name www -p 80:80 blakelapierre/etnpool-www
-docker run -d --rm --name pool --link redis --link daemon --link wallet -p 8117:8117 -p 3333:3333 -p 9999:9999 blakelapierre/etnpool-pool
+docker run -d --rm --name pool --link redis --link daemon -p 8117:8117 -p 3333:3333 -p 9999:9999 blakelapierre/etnpool-pool
