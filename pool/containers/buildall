@@ -1,9 +1,15 @@
 #!/bin/sh
 
+echo "Building base"
 (cd base && ./build)
+echo "Building daemon"
 (cd daemon && ./build)
+echo "Building pool"
 (cd pool && ./build)
+echo "Building redis"
 (cd redis && ./build)
+echo "Building wallet"
 (cd wallet && ./build)
+echo "Building www"
 (cd www && ./build)
 
