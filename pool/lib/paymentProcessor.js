@@ -15,9 +15,9 @@ log('info', logSystem, 'Started');
 function runInterval(){
     async.waterfall([
 
-        //Get worker keys
+        //Get workers from workers set.
         function(callback){
-            redisClient.keys(config.coin + ':workers:*', function(error, result) {
+            redisClient.smembers(config.coin + ':workers', function(error, result) {
                 if (error) {
                     log('error', logSystem, 'Error trying to get worker balances from redis %j', [error]);
                     callback(true);
@@ -28,9 +28,9 @@ function runInterval(){
         },
 
         //Get worker balances
-        function(keys, callback){
-            var redisCommands = keys.map(function(k){
-                return ['hget', k, 'balance'];
+        function(workers, callback){
+            var redisCommands = workers.map(function(k){
+                return ['hget', config.coin + ':workers:' + k, 'balance'];
             });
             redisClient.multi(redisCommands).exec(function(error, replies){
                 if (error){
@@ -40,10 +40,8 @@ function runInterval(){
                 }
                 var balances = {};
                 for (var i = 0; i < replies.length; i++){
-                    var parts = keys[i].split(':');
-                    var workerId = parts[parts.length - 1];
+                    var workerId = workers[i];
                     balances[workerId] = parseInt(replies[i]) || 0
-
                 }
                 callback(null, balances);
             });
@@ -59,6 +57,10 @@ function runInterval(){
                 if (balance >= config.payments.minPayment){
                     var remainder = balance % config.payments.denomination;
                     var payout = balance - remainder;
+					// if use dynamic transfer fee, fee will be subtracted from miner's payout
+					if(config.payments.useDynamicTransferFee && config.payments.minerPayFee){
+						payout -= config.payments.transferFeePerPayee;
+					}
                     if (payout < 0) continue;
                     payments[worker] = payout;
                 }
@@ -74,13 +76,13 @@ function runInterval(){
             var addresses = 0;
             var commandAmount = 0;
             var commandIndex = 0;
-
-            for (var worker in payments){
+			
+			for (var worker in payments){
                 var amount = parseInt(payments[worker]);
 				if(config.payments.maxTransactionAmount && amount + commandAmount > config.payments.maxTransactionAmount) {
 		            amount = config.payments.maxTransactionAmount - commandAmount;
 	            }
-
+				
 				if(!transferCommands[commandIndex]) {
 					transferCommands[commandIndex] = {
 						redis: [],
@@ -93,16 +95,25 @@ function runInterval(){
 						}
 					};
 				}
-
+				
                 transferCommands[commandIndex].rpc.destinations.push({amount: amount, address: worker});
                 transferCommands[commandIndex].redis.push(['hincrby', config.coin + ':workers:' + worker, 'balance', -amount]);
-                transferCommands[commandIndex].redis.push(['hincrby', config.coin + ':workers:' + worker, 'paid', amount]);
+				if(config.payments.useDynamicTransferFee && config.payments.minerPayFee){
+					transferCommands[commandIndex].redis.push(['hincrby', config.coin + ':workers:' + worker, 'balance', -config.payments.transferFeePerPayee]);
+				}
+				transferCommands[commandIndex].redis.push(['hincrby', config.coin + ':workers:' + worker, 'paid', amount]);
                 transferCommands[commandIndex].amount += amount;
 
                 addresses++;
 				commandAmount += amount;
+				
+				// update payment fee if use dynamic transfer fee
+				if(config.payments.useDynamicTransferFee){
+					transferCommands[commandIndex].rpc.fee = config.payments.transferFeePerPayee * addresses;
+				}
+				
                 if (addresses >= config.payments.maxAddresses || ( config.payments.maxTransactionAmount && commandAmount >= config.payments.maxTransactionAmount)) {
-                    commandIndex++;
+					commandIndex++;
                     addresses = 0;
 					commandAmount = 0;
                 }
@@ -113,14 +124,14 @@ function runInterval(){
             async.filter(transferCommands, function(transferCmd, cback){
                 apiInterfaces.rpcWallet('transfer', transferCmd.rpc, function(error, result){
                     if (error){
-                        log('error', logSystem, 'Error with send_transaction RPC request to wallet daemon %j', [error]);
+                        log('error', logSystem, 'Error with transfer RPC request to wallet daemon %j', [error]);
                         log('error', logSystem, 'Payments failed to send to %j', transferCmd.rpc.destinations);
                         cback(false);
                         return;
                     }
 
                     var now = (timeOffset++) + Date.now() / 1000 | 0;
-                    var txHash = result.tx_hash;
+                    var txHash = result.tx_hash.replace('<', '').replace('>', '');
 
 
                     transferCmd.redis.push(['zadd', config.coin + ':payments:all', now, [
