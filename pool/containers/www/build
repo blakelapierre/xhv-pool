@@ -3,4 +3,4 @@
 rm -rf static-html
 cp -R ../../website static-html/
 
-docker build . -t blakelapierre/etnpool-www
+docker build . -t blakelapierre/xhvpool-www  --no-cache

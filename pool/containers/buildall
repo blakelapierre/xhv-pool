@@ -8,8 +8,8 @@ echo "Building pool"
 (cd pool && ./build)
 echo "Building redis"
 (cd redis && ./build)
-echo "Building wallet"
-(cd wallet && ./build)
+# echo "Building wallet"
+# (cd wallet && ./build)
 echo "Building www"
 (cd www && ./build)
 
