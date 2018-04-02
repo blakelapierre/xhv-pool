@@ -1,8 +1,8 @@
 {
-    "coin": "electroneum",
-    "symbol": "ETN",
+    "coin": "haven",
+    "symbol": "XHV",
     "coinUnits": 1000000000000,
-    "coinDifficultyTarget": 60,
+    "coinDifficultyTarget": 120,
 
     "logging": {
         "files": {
@@ -19,7 +19,7 @@
     "poolServer": {
         "enabled": true,
         "clusterForks": "auto",
-        "poolAddress": "etnk1FzHAgEH2p15Usyzy5UhYocszGggwFaHE6k8Z1ZSBE4kww7azLkT3qgVFgKn5LaVxV9NRssPu5PsWLtJteZw9v6yhMEVRA",
+        "poolAddress": "hvi1aCqoAZF19J8pijvqnrUkeAeP8Rvr4XyfDMGJcarhbL15KgYKM1hN7kiHMu3fer5k8JJ8YRLKCahDKFgLFgJMYAfnNPmpB312pync2Yy3a",
         "blockRefreshInterval": 100,
         "minerTimeout": 9000,
         "ports": [
